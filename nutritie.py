@@ -1,45 +1,26 @@
 import streamlit as st
-def verifica_parola():
-    if "autentificat" not in st.session_state:
-        st.session_state["autentificat"] = False
-
-    if not st.session_state["autentificat"]:
-        parola_introdusa = st.text_input("Introdu parola pentru acces:", type="password")
-        if st.button("Logare"):
-            if parola_introdusa == "ParolaTaSecreta123":
-                st.session_state["autentificat"] = True
-                st.rerun()
-            else:
-                st.error("Parolă incorectă!")
-        return False
-    return True
-
-if verifica_parola():
-    # AICI pui tot codul aplicației tale NutriFit
-    st.title("Bine ai venit la NutriFit!")
-import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# 1. CONFIGURARE PAGINĂ
+# 1. CONFIGURARE PAGINĂ (Trebuie să fie prima instrucțiune Streamlit)
 st.set_page_config(page_title="NutriFit Pro: Aplicația Mariei", layout="wide", page_icon="🍎")
 
-# 2. SECURITATE
+# 2. SECURITATE (Varianta corectă)
 if "autentificat" not in st.session_state:
     st.session_state.autentificat = False
 
 if not st.session_state.autentificat:
-    st.title("🔒 Acces Protejat")
-    parola = st.text_input("Introdu parola:", type="password")
+    st.title("🔒 Acces Protejat NutriFit")
+    parola = st.text_input("Introdu parola pentru deblocare:", type="password")
     if st.button("Autentificare"):
         if parola == "nutrifit2026":
             st.session_state.autentificat = True
             st.rerun()
         else:
-            st.error("Parolă incorectă!")
-    st.stop()
+            st.error("Parolă incorectă! Contactează administratorul.")
+    st.stop() # Oprește execuția restului codului dacă nu e logat
 
-# 3. INTERFAȚĂ
+# 3. INTERFAȚĂ APLICAȚIE (Apare doar după logare)
 st.title("🍎 NutriFit Pro: Aplicația Mariei")
 
 if 'calculat' not in st.session_state:
@@ -56,7 +37,6 @@ with tab1:
         greutate = st.number_input("Greutate (kg)", 40.0, 200.0, 75.0)
         sex = st.radio("Sex", ["Masculin", "Feminin"], horizontal=True)
         
-        # AICI APAR OPȚIUNILE DE ACTIVITATE CARE LIPSEAU
         activitate_optiuni = {
             "Sedentar (Birou)": 1.2,
             "Activitate Ușoară": 1.375, 
@@ -69,47 +49,36 @@ with tab1:
         tip = st.selectbox("Tip Somatic:", ["Ectomorf", "Mezomorf", "Endomorf"])
         
         if st.button("CALCULEAZĂ PLANUL"):
-            # Calcul Rata Metabolică Bazală (RMB)
+            # Calcul Rata Metabolică Bazală (RMB) - formulă simplificată
             rmb = (10 * greutate) + (6.25 * 165) - (5 * 30) + (5 if sex == "Masculin" else -161)
             necesar = int(rmb * factor)
-            # LOGICA TA: Slabire = Necesar - 1000
-            slabire = necesar - 1000
+            deficit = necesar - 500 # Deficit standard pentru slăbire
             
-            st.session_state.res = {
-                "necesar": necesar,
-                "slabire": max(slabire, 1200), # Nu coborâm sub 1200 din motive de siguranță
-                "p": int((slabire * 0.3) / 4),
-                "c": int((slabire * 0.4) / 4),
-                "g": int((slabire * 0.3) / 9)
-            }
             st.session_state.calculat = True
+            st.session_state.necesar = necesar
+            st.session_state.deficit = deficit
 
     with col_out:
-        if st.session_state.calculat:
-            res = st.session_state.res
+        if st.session_state.get('calculat'):
             st.subheader("🎯 Rezultate Plan")
-            c1, c2 = st.columns(2)
-            c1.metric("Calorii Menținere", f"{res['necesar']} kcal")
-            c2.metric("Țintă Slăbire (-1000)", f"{res['slabire']} kcal", delta="-1000 kcal")
+            st.metric("Necesar Menținere", f"{st.session_state.necesar} kcal")
+            st.metric("Țintă Slăbire (Deficit)", f"{st.session_state.deficit} kcal", delta="-500 kcal")
             
-            st.divider()
-            fig = px.pie(values=[res['p']*4, res['c']*4, res['g']*9], 
-                         names=['Proteine', 'Carbi', 'Grăsimi'],
-                         color_discrete_sequence=['#3498db', '#f1c40f', '#e74c3c'], hole=0.4)
-            st.plotly_chart(fig, use_container_width=True)
+            # Exemplu Grafic Macros
+            df_macros = pd.DataFrame({
+                "Macro": ["Proteine", "Carbohidrați", "Grăsimi"],
+                "Valoare": [30, 40, 30]
+            })
+            fig = px.pie(df_macros, values='Valoare', names='Macro', title="Distribuție Macronutrienți (%)")
+            st.plotly_chart(fig)
         else:
-            st.info("👈 Introdu datele în stânga și apasă pe 'Calculează Planul'.")
+            st.info("Introdu datele și apasă butonul de calcul.")
 
-# --- TAB 2: MENIU SĂPTĂMÂNAL ---
+# --- TAB 2 & 3 (Schițe) ---
 with tab2:
-    if st.session_state.calculat:
-        ziua = st.selectbox("Selectează Ziua:", ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"])
-        st.subheader(f"🍴 Meniu recomandat pentru {ziua}")
-        # Aici poți personaliza meniurile pentru fiecare zi
-        st.write("Configurația de macros este salvată. Poți alege alimentele preferate de mai jos.")
-        st.info("Sistemul de rotație a alimentelor va fi disponibil în curând.")
-    else:
-        st.warning("⚠️ Calculează planul mai întâi!")
+    st.subheader("🍱 Meniu personalizat")
+    st.write("Aici va apărea meniul tău după ce finalizăm algoritmul.")
 
-
-
+with tab3:
+    st.subheader("🛒 Ce trebuie să cumperi")
+    st.write("Lista de cumpărături generată automat.")
