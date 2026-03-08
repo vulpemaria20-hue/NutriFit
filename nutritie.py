@@ -2,47 +2,57 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Configurare Pagina
+# 1. Configurare Pagina
 st.set_page_config(page_title="NutriFit Pro", layout="wide")
 
-# Sistem de Parolă Simplu
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
+# 2. Sistem de Parolă în Sidebar
+st.sidebar.title("🔐 Autentificare")
+parola = st.sidebar.text_input("Introdu parola proiectului:", type="password")
 
-def check_password():
-    if st.sidebar.text_input("Parolă", type="password") == "nutrifit2026":
-        st.session_state["authenticated"] = True
-    else:
-        if st.session_state["authenticated"] == False:
-            st.error("🔒 Acces restricționat. Introdu parola în lateral.")
+if parola == "nutrifit2026":
+    st.title("🍎 NutriFit Pro - Dashboard Nutrițional")
+    st.markdown("---")
 
-check_password()
-
-if st.session_state["authenticated"]:
-    st.title("🍎 NutriFit Pro - Calculator Nutrițional")
-    
+    # 3. Introducere Date Client
     col1, col2 = st.columns(2)
     
     with col1:
-        nume = st.text_input("Nume Client")
-        greutate = st.number_input("Greutate (kg)", min_value=40.0, max_value=200.0, value=70.0)
-        obiectiv = st.selectbox("Obiectiv", ["Slăbire", "Menținere", "Masă Musculară"])
+        st.subheader("👤 Date Client")
+        nume = st.text_input("Nume complet:")
+        greutate = st.number_input("Greutate actuală (kg):", 40, 200, 70)
+        obiectiv = st.selectbox("Obiectivul tău:", ["Slăbire", "Menținere", "Masă Musculară"])
     
     with col2:
-        protein_pct = st.slider("Proteine (%)", 10, 40, 30)
-        carbs_pct = st.slider("Carbohidrați (%)", 10, 60, 40)
-        fats_pct = 100 - (protein_pct + carbs_pct)
-        st.info(f"Grăsimi calculate automat: {fats_pct}%")
+        st.subheader("⚖️ Setare Macronutrienți (%)")
+        proteine = st.slider("Proteine (%)", 10, 40, 25)
+        carbohidrati = st.slider("Carbohidrați (%)", 10, 60, 45)
+        grasimi = 100 - (proteine + carbohidrati)
+        st.info(f"Grăsimi calculate automat: **{grasimi}%**")
 
-    # Calcul Caloric Simplist (Exemplu)
-    kcal = greutate * 30 if obiectiv == "Menținere" else (greutate * 25 if obiectiv == "Slăbire" else greutate * 35)
-    
-    st.success(f"### Total Calorii Recomandate: {int(kcal)} kcal")
-    
-    # Grafic
-    df_macros = pd.DataFrame({
-        "Macro": ["Proteine", "Carbohidrați", "Grăsimi"],
-        "Valoare": [protein_pct, carbs_pct, fats_pct]
+    # 4. Calcule Matematice
+    if obiectiv == "Slăbire":
+        total_kcal = greutate * 24
+    elif obiectiv == "Masă Musculară":
+        total_kcal = greutate * 35
+    else:
+        total_kcal = greutate * 30
+
+    st.markdown("---")
+    st.success(f"### 🔥 Total Calorii Recomandate: {int(total_kcal)} kcal / zi")
+
+    # 5. Generare Grafic (Aici era eroarea!)
+    st.subheader("📊 Distribuția Caloriilor")
+    date_grafic = pd.DataFrame({
+        "Nutrient": ["Proteine", "Carbohidrați", "Grăsimi"],
+        "Procent": [proteine, carbohidrati, grasimi]
     })
-    fig = px.pie(df_macros, values='Valoare', names='Macro', title="Distribuție Macronutrienți")
-    st.plotly_chart(fig)
+    
+    fig = px.pie(date_grafic, values='Procent', names='Nutrient', 
+                 color_discrete_sequence=px.colors.sequential.RdBu,
+                 hole=0.4)
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+else:
+    st.warning("Te rugăm să introduci parola corectă în meniul din stânga pentru a debloca instrumentele.")
+    st.info("Sfat: Parola este 'nutrifit2026'")
