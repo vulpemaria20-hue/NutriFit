@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import io
 
 # 1. CONFIGURARE PAGINĂ
 st.set_page_config(page_title="Aplicația Mariei", layout="wide", page_icon="🍎")
@@ -81,19 +80,14 @@ with tab2:
     for zi in ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"]:
         with st.expander(f"📅 {zi}"):
             cols = st.columns(5)
-            # MD
             md = cols[0].selectbox("Mic Dejun", ["Omletă", "Ovăz", "Pâine avocado"], key=f"md_{zi}")
             gr_md = (st.session_state.tinta_kcal * distributie["MD"] / db[md]) * 100
-            # G1
             g1 = cols[1].selectbox("Gustare 1", ["Măr", "Nuci", "Iaurt grecesc"], key=f"g1_{zi}")
             gr_g1 = (st.session_state.tinta_kcal * distributie["G1"] / db[g1]) * 100
-            # PZ
             pz = cols[2].selectbox("Prânz", ["Pui grătar", "Pește cuptor", "Curcan", "Salată ton"], key=f"pz_{zi}")
             gr_pz = (st.session_state.tinta_kcal * distributie["PZ"] / db[pz]) * 100
-            # G2
             g2 = cols[3].selectbox("Gustare 2", ["Baton proteic", "Brânză cottage", "Nuci"], key=f"g2_{zi}")
             gr_g2 = (st.session_state.tinta_kcal * distributie["G2"] / db[g2]) * 100
-            # CN
             cn = cols[4].selectbox("Cină", ["Supă cremă", "Pește alb", "Iaurt semințe"], key=f"cn_{zi}")
             gr_cn = (st.session_state.tinta_kcal * distributie["CN"] / db[cn]) * 100
             
@@ -106,11 +100,9 @@ with tab2:
     df_plan = pd.DataFrame(tabel_date)
     st.table(df_plan)
 
-    # EXPORT EXCEL
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df_plan.to_excel(writer, index=False, sheet_name='Meniu')
-    st.download_button(label="📥 Descarcă Meniul în EXCEL", data=output.getvalue(), file_name="meniu_mariei.xlsx", mime="application/vnd.ms-excel")
+    # EXPORT CSV (Compatibil Excel)
+    csv = df_plan.to_csv(index=False).encode('utf-8-sig') # 'utf-8-sig' ajută Excel să vadă caracterele corect
+    st.download_button(label="📥 Descarcă Meniul (Excel)", data=csv, file_name="meniu_mariei.csv", mime="text/csv")
 
 # --- TAB 3: LISTA CUMPĂRĂTURI ---
 with tab3:
