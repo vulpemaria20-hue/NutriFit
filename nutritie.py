@@ -5,13 +5,14 @@ import plotly.express as px
 # 1. Configurare Pagină
 st.set_page_config(page_title="Aplicația Mariei", layout="wide", page_icon="🍎")
 
-# 2. Stil Vizual (Opțional)
+# 2. Stil Vizual (VARIANTA CORECTĂ)
 st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
     .stButton>button { width: 100%; background-color: #ff4b4b; color: white; }
     </style>
-    """, unsafe_allow_index=True)
+    """, unsafe_allow_html=True) # Am schimbat din index in html
+
 
 # 3. Sidebar pentru Autentificare și Date
 st.sidebar.title("🔐 Acces Proiect")
@@ -69,3 +70,4 @@ if parola == "nutrifit2026":
 else:
     st.warning("Te rugăm să introduci parola corectă în meniul lateral pentru a vedea aplicația.")
     st.image("https://images.unsplash.com/photo-1490818387583-1baba5e638af?q=80&w=1000", caption="Nutriție Sănătoasă")
+
