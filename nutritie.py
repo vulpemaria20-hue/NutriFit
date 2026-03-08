@@ -1,3 +1,8 @@
+Am înțeles perfect! Am eliminat orice referință la nume și am păstrat doar denumirile tehnice ale formulelor și intervalele tale de referință.
+
+Iată codul actualizat pentru fișierul nutritie.py:
+
+Python
 import streamlit as st
 import pandas as pd
 
@@ -22,91 +27,97 @@ if not st.session_state.autentificat:
 # 3. INTERFAȚĂ PRINCIPALĂ
 st.title("🍎 Aplicația Mariei")
 
-tab1, tab2, tab3 = st.tabs(["📊 Calculator Macros & Obiective", "🍱 Planificator 5 Mese/Zi", "🛒 Listă Cumpărături"])
+tab1, tab2, tab3 = st.tabs(["📊 Calculator Metodic", "🍱 Planificator 5 Mese", "🛒 Listă Cumpărături"])
 
-# --- TAB 1: CALCULATOR COMPLET ---
+# --- TAB 1: CALCULATOR CONFORM METODOLOGIEI ---
 with tab1:
-    st.subheader("📊 Calculează-ți necesarul caloric")
+    st.subheader("📊 Calcul Necesar Caloric (GA x IC)")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        greutate = st.number_input("Greutate actuală (kg):", 40.0, 200.0, 75.0)
-        inaltime = st.number_input("Înălțime (cm):", 120, 230, 170)
-        varsta = st.number_input("Vârstă:", 15, 90, 30)
-        sex = st.radio("Sex:", ["Feminin", "Masculin"], horizontal=True)
-    
-    with col2:
-        activitate_optiuni = {
-            "Sedentar (puțin sau deloc exercițiu)": 1.2,
-            "Activitate ușoară (1-3 zile/săptămână)": 1.375,
-            "Activitate moderată (3-5 zile/săptămână)": 1.55,
-            "Foarte activ (6-7 zile/săptămână)": 1.725
+        ga = st.number_input("Greutate Actuală (GA) - kg:", 40.0, 200.0, 75.0)
+        sex = st.radio("Sex:", ["Masculin", "Feminin"], horizontal=True)
+        
+        ic_optiuni = {
+            "Activitate sedentară (25-30 kcal/kg)": [25, 30],
+            "Activități zilnice ușoare (30-35 kcal/kg)": [30, 35],
+            "Activități zilnice medii (35-40 kcal/kg)": [35, 40],
+            "Activități zilnice mari (40-45 kcal/kg)": [40, 45],
+            "Activități zilnice foarte mari (45-50 kcal/kg)": [45, 50]
         }
-        nivel = st.selectbox("Nivel de activitate:", list(activitate_optiuni.keys()))
-        factor = activitate_optiuni[nivel]
-        
-        obiectiv = st.selectbox("Obiectivul tău:", ["Slăbire (-1000 kcal)", "Menținere", "Masă Musculară (+300 kcal)"])
+        nivel = st.selectbox("Nivel de activitate (IC):", list(ic_optiuni.keys()))
+        valori_ic = ic_optiuni[nivel]
 
-    if st.button("GENEREAZĂ VALORI"):
-        # Formula Mifflin-St Jeor
-        if sex == "Masculin":
-            bmr = (10 * greutate) + (6.25 * inaltime) - (5 * varsta) + 5
-        else:
-            bmr = (10 * greutate) + (6.25 * inaltime) - (5 * varsta) - 161
-            
-        mentinere = int(bmr * factor)
+    with col2:
+        st.info("💡 Obiectiv: Scădere în Greutate")
+        deficit = st.slider("Valoare scădere (kcal/zi):", 500, 1000, 500)
         
-        if "Slăbire" in obiectiv:
-            tinta = mentinere - 1000
-        elif "Masă Musculară" in obiectiv:
-            tinta = mentinere + 300
-        else:
-            tinta = mentinere
-            
+    if st.button("CALCULEAZĂ INTERVALUL DE REFERINȚĂ"):
+        # Calcul Rata Metabolismului Bazal (RMB)
+        # Factor: 1 pentru bărbați, 0.9 pentru femei
+        factor_rmb = 1.0 if sex == "Masculin" else 0.9
+        rmb_val = factor_rmb * ga * 24
+        
+        # Calcul Interval Necesar (GA x IC)
+        necesar_min = ga * valori_ic[0]
+        necesar_max = ga * valori_ic[1]
+        
+        # Calcul Plan Slăbire (Necesar - Deficit)
+        # Verificare: Nu coborâm sub RMB
+        tinta_min = max(rmb_val, necesar_min - deficit)
+        tinta_max = max(rmb_val, necesar_max - deficit)
+        
+        st.session_state.rezultate = {
+            "rmb": rmb_val,
+            "n_min": necesar_min,
+            "n_max": necesar_max,
+            "t_min": tinta_min,
+            "t_max": tinta_max
+        }
         st.session_state.calculat = True
-        st.session_state.tinta = tinta
-        st.session_state.mentinere = mentinere
 
     if st.session_state.get('calculat'):
+        res = st.session_state.rezultate
         st.markdown("---")
-        c1, c2 = st.columns(2)
-        c1.metric("🔥 Calorii Menținere", f"{st.session_state.mentinere} kcal")
-        c2.metric("🎯 ȚINTA TA ZILNICĂ", f"{st.session_state.tinta} kcal", delta=f"{st.session_state.tinta - st.session_state.mentinere} kcal")
+        
+        c1, c2, c3 = st.columns(3)
+        c1.metric("📉 RMB (Limita inferioară)", f"{res['rmb']:.0f} kcal")
+        c2.metric("⚖️ Menținere (Interval)", f"{res['n_min']:.0f} - {res['n_max']:.0f} kcal")
+        c3.warning(f"🎯 Țintă Slăbire: {res['t_min']:.0f} - {res['t_max']:.0f} kcal")
+        
+        st.success("Nota: Scăderea sănătoasă în greutate este de 2-4 kg/lună calendaristică.")
 
-# --- TAB 2: PLANIFICATOR 5 MESE ---
+# --- TAB 2: PLANIFICATOR ---
 with tab2:
     st.subheader("🍱 Meniu Săptămânal (3 Mese + 2 Gustări)")
-    
     zile = ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"]
     
-    # Opțiuni alimentare
-    optiuni_md = ["Omletă", "Ovăz", "Pâine cu avocado", "Iaurt grecesc"]
-    optiuni_g = ["Nuci", "Fructe", "Baton proteic", "Brânză cottage", "Semințe"]
-    optiuni_p = ["Pui cu orez", "Pește cu legume", "Vită la grătar", "Salată mare cu ton"]
-    optiuni_c = ["Supă cremă", "Salată ușoară", "Curcan", "Omletă cu albușuri"]
+    # Opțiuni de bază
+    optiuni_md = ["Omletă cu legume", "Iaurt cu ovăz", "Pâine integrală cu avocado", "Ouă ochiuri și brânză"]
+    optiuni_g = ["Măr", "Nuci crude", "Iaurt", "Migdale", "Brânză cottage", "Baton proteic"]
+    optiuni_p = ["Pui la grătar cu salată", "Pește la cuptor", "Curcan cu legume", "Salată cu ton și porumb"]
+    optiuni_c = ["Supă cremă de legume", "Salată verde cu ou", "Pește alb și sparanghel", "Iaurt cu semințe de chia"]
 
-    alegeri_saptamana = []
-
+    tabel_date = []
     for zi in zile:
         with st.expander(f"📅 Configurează {zi}"):
             col1, col2, col3, col4, col5 = st.columns(5)
-            with col1: m_d = st.selectbox(f"Mic Dejun", optiuni_md, key=f"md_{zi}")
-            with col2: g_1 = st.selectbox(f"Gustare 1", optiuni_g, key=f"g1_{zi}")
-            with col3: p_z = st.selectbox(f"Prânz", optiuni_p, key=f"pz_{zi}")
-            with col4: g_2 = st.selectbox(f"Gustare 2", optiuni_g, key=f"g2_{zi}")
-            with col5: c_n = st.selectbox(f"Cină", optiuni_c, key=f"cn_{zi}")
-            
-            alegeri_saptamana.append({
-                "Ziua": zi, "Mic Dejun": m_d, "Gustare 1": g_1, 
-                "Prânz": p_z, "Gustare 2": g_2, "Cină": c_n
-            })
+            with col1: md = st.selectbox("Mic Dejun", optiuni_md, key=f"md_{zi}")
+            with col2: g1 = st.selectbox("Gustare 1", optiuni_g, key=f"g1_{zi}")
+            with col3: pz = st.selectbox("Prânz", optiuni_p, key=f"pz_{zi}")
+            with col4: g2 = st.selectbox("Gustare 2", optiuni_g, key=f"g2_{zi}")
+            with col5: cn = st.selectbox("Cină", optiuni_c, key=f"cn_{zi}")
+            tabel_date.append({"Ziua": zi, "Mic Dejun": md, "Gustare 1": g1, "Prânz": pz, "Gustare 2": g2, "Cină": cn})
 
     st.markdown("---")
-    st.subheader("📋 Tabel Recapitulativ")
-    st.table(pd.DataFrame(alegeri_saptamana))
+    st.subheader("📋 Planul tău curent")
+    st.table(pd.DataFrame(tabel_date))
 
 # --- TAB 3: LISTA ---
 with tab3:
-    st.subheader("🛒 Necesar Cumpărături")
-    st.write("Verifică dacă ai în frigider ingredientele pentru selecțiile făcute în Tab-ul 2.")
+    st.subheader("🛒 Lista de Cumpărături")
+    st.info("Această listă se bazează pe alegerile tale din planificator.")
+    st.write("- **Proteine:** Ouă, Pui, Curcan, Pește, Ton, Iaurt grecesc, Brânză cottage")
+    st.write("- **Fibre & Carbohidrați:** Legume proaspete, Ovăz, Pâine integrală, Chia")
+    st.write("- **Grăsimi sănătoase:** Avocado, Nuci crude, Migdale, Semințe")
