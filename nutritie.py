@@ -1,3 +1,4 @@
+import streamlit as st
 def verifica_parola():
     if "autentificat" not in st.session_state:
         st.session_state["autentificat"] = False
@@ -109,5 +110,6 @@ with tab2:
         st.info("Sistemul de rotație a alimentelor va fi disponibil în curând.")
     else:
         st.warning("⚠️ Calculează planul mai întâi!")
+
 
 
