@@ -19,61 +19,94 @@ if not st.session_state.autentificat:
             st.error("Parolă incorectă!")
     st.stop()
 
-# 3. INTERFAȚĂ
+# 3. INTERFAȚĂ PRINCIPALĂ
 st.title("🍎 Aplicația Mariei")
 
-tab1, tab2, tab3 = st.tabs(["📊 Calculator", "🍱 Planificator Săptămânal", "🛒 Listă Cumpărături"])
+tab1, tab2, tab3 = st.tabs(["📊 Calculator Macros & Obiective", "🍱 Planificator 5 Mese/Zi", "🛒 Listă Cumpărături"])
 
-# --- TAB 1: CALCULATOR ---
+# --- TAB 1: CALCULATOR COMPLET ---
 with tab1:
-    st.subheader("📝 Calculează necesarul tău")
-    greutate = st.number_input("Greutate (kg)", 40.0, 200.0, 70.0)
-    if st.button("Calculează"):
-        necesar = int(10 * greutate + 500) # Formulă simplă de exemplu
-        st.success(f"Ținta ta este de {necesar} kcal.")
+    st.subheader("📊 Calculează-ți necesarul caloric")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        greutate = st.number_input("Greutate actuală (kg):", 40.0, 200.0, 75.0)
+        inaltime = st.number_input("Înălțime (cm):", 120, 230, 170)
+        varsta = st.number_input("Vârstă:", 15, 90, 30)
+        sex = st.radio("Sex:", ["Feminin", "Masculin"], horizontal=True)
+    
+    with col2:
+        activitate_optiuni = {
+            "Sedentar (puțin sau deloc exercițiu)": 1.2,
+            "Activitate ușoară (1-3 zile/săptămână)": 1.375,
+            "Activitate moderată (3-5 zile/săptămână)": 1.55,
+            "Foarte activ (6-7 zile/săptămână)": 1.725
+        }
+        nivel = st.selectbox("Nivel de activitate:", list(activitate_optiuni.keys()))
+        factor = activitate_optiuni[nivel]
+        
+        obiectiv = st.selectbox("Obiectivul tău:", ["Slăbire (-1000 kcal)", "Menținere", "Masă Musculară (+300 kcal)"])
 
-# --- TAB 2: PLANIFICATOR CU SELECTIE ---
+    if st.button("GENEREAZĂ VALORI"):
+        # Formula Mifflin-St Jeor
+        if sex == "Masculin":
+            bmr = (10 * greutate) + (6.25 * inaltime) - (5 * varsta) + 5
+        else:
+            bmr = (10 * greutate) + (6.25 * inaltime) - (5 * varsta) - 161
+            
+        mentinere = int(bmr * factor)
+        
+        if "Slăbire" in obiectiv:
+            tinta = mentinere - 1000
+        elif "Masă Musculară" in obiectiv:
+            tinta = mentinere + 300
+        else:
+            tinta = mentinere
+            
+        st.session_state.calculat = True
+        st.session_state.tinta = tinta
+        st.session_state.mentinere = mentinere
+
+    if st.session_state.get('calculat'):
+        st.markdown("---")
+        c1, c2 = st.columns(2)
+        c1.metric("🔥 Calorii Menținere", f"{st.session_state.mentinere} kcal")
+        c2.metric("🎯 ȚINTA TA ZILNICĂ", f"{st.session_state.tinta} kcal", delta=f"{st.session_state.tinta - st.session_state.mentinere} kcal")
+
+# --- TAB 2: PLANIFICATOR 5 MESE ---
 with tab2:
-    st.subheader("🍱 Configurează-ți meniul pe 7 zile")
-    st.info("Selectează ce dorești să mănânci în fiecare zi. Gustările sunt incluse între mese.")
-
+    st.subheader("🍱 Meniu Săptămânal (3 Mese + 2 Gustări)")
+    
     zile = ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"]
     
-    # Opțiuni pentru mâncare (Poți adăuga/modifica aceste liste)
-    optiuni_mic_dejun = ["Omletă cu legume", "Iaurt cu ovăz și fructe", "Pancakes proteice", "Pâine integrală cu avocado"]
-    optiuni_gustari = ["O mână de nuci", "Un măr", "Iaurt grecesc", "Baton proteic", "O banană", "Brânză cottage"]
-    optiuni_pranz = ["Pui la grătar cu orez", "Pește la cuptor cu sparanghel", "Salată mare cu ton", "Vită cu broccoli"]
-    optiuni_cina = ["Supă cremă de linte", "Salată verde cu ou fierte", "Iaurt cu semințe", "Curcan cu salată rucola"]
+    # Opțiuni alimentare
+    optiuni_md = ["Omletă", "Ovăz", "Pâine cu avocado", "Iaurt grecesc"]
+    optiuni_g = ["Nuci", "Fructe", "Baton proteic", "Brânză cottage", "Semințe"]
+    optiuni_p = ["Pui cu orez", "Pește cu legume", "Vită la grătar", "Salată mare cu ton"]
+    optiuni_c = ["Supă cremă", "Salată ușoară", "Curcan", "Omletă cu albușuri"]
 
-    # Creăm un dicționar pentru a stoca alegerile
-    alegeri = []
+    alegeri_saptamana = []
 
     for zi in zile:
-        with st.expander(f"📅 Meniu pentru {zi}"):
+        with st.expander(f"📅 Configurează {zi}"):
             col1, col2, col3, col4, col5 = st.columns(5)
-            with col1:
-                md = st.selectbox(f"Mic Dejun ({zi})", optiuni_mic_dejun)
-            with col2:
-                g1 = st.selectbox(f"Gustare 1 ({zi})", optiuni_gustari)
-            with col3:
-                pz = st.selectbox(f"Prânz ({zi})", optiuni_pranz)
-            with col4:
-                g2 = st.selectbox(f"Gustare 2 ({zi})", optiuni_gustari, index=1)
-            with col5:
-                cn = st.selectbox(f"Cină ({zi})", optiuni_cina)
+            with col1: m_d = st.selectbox(f"Mic Dejun", optiuni_md, key=f"md_{zi}")
+            with col2: g_1 = st.selectbox(f"Gustare 1", optiuni_g, key=f"g1_{zi}")
+            with col3: p_z = st.selectbox(f"Prânz", optiuni_p, key=f"pz_{zi}")
+            with col4: g_2 = st.selectbox(f"Gustare 2", optiuni_g, key=f"g2_{zi}")
+            with col5: c_n = st.selectbox(f"Cină", optiuni_c, key=f"cn_{zi}")
             
-            alegeri.append({"Zi": zi, "Mic Dejun": md, "Gustare 1": g1, "Prânz": pz, "Gustare 2": g2, "Cină": cn})
+            alegeri_saptamana.append({
+                "Ziua": zi, "Mic Dejun": m_d, "Gustare 1": g_1, 
+                "Prânz": p_z, "Gustare 2": g_2, "Cină": c_n
+            })
 
-    # Afișăm tabelul final recapitulativ
     st.markdown("---")
-    st.subheader("📋 Tabelul tău săptămânal")
-    df_final = pd.DataFrame(alegeri)
-    st.table(df_final)
+    st.subheader("📋 Tabel Recapitulativ")
+    st.table(pd.DataFrame(alegeri_saptamana))
 
 # --- TAB 3: LISTA ---
 with tab3:
-    st.subheader("🛒 Lista de Cumpărături")
-    st.write("În funcție de selecțiile din Tab-ul 2, asigură-te că ai:")
-    st.write("- Ouă, Pui, Pește, Curcan")
-    st.write("- Iaurt, Ovăz, Nuci, Fructe")
-    st.write("- Legume verzi, Orez, Avocado")
+    st.subheader("🛒 Necesar Cumpărături")
+    st.write("Verifică dacă ai în frigider ingredientele pentru selecțiile făcute în Tab-ul 2.")
