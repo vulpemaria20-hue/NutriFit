@@ -6,14 +6,14 @@ import pandas as pd
 import plotly.express as px
 
 # 1. Configurare Pagina
-st.set_page_config(page_title="NutriFit ", layout="wide")
+st.set_page_config(page_title="Aplicatia Mariei ", layout="wide")
 
 # 2. Sistem de Parolă în Sidebar
 st.sidebar.title("🔐 Autentificare")
 parola = st.sidebar.text_input("Introdu parola proiectului:", type="password")
 
 if parola == "nutrifit2026":
-    st.title("🍎 NutriFit  - Dashboard Nutrițional")
+    st.title("🍎Aplicatia Mariei  - Dashboard Nutrițional")
     st.markdown("---")
 
     # 3. Introducere Date Client
@@ -59,6 +59,7 @@ if parola == "nutrifit2026":
 else:
     st.warning("Te rugăm să introduci parola corectă în meniul din stânga pentru a debloca instrumentele.")
     st.info("Sfat: Parola este 'nutrifit2026'")
+
 
 
 
