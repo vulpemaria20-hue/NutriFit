@@ -22,9 +22,12 @@ if not st.session_state.autentificat:
 # 3. INTERFAȚĂ PRINCIPALĂ
 st.title("🍎 Aplicația Mariei")
 
-tab1, tab2, tab3 = st.tabs(["📊 Calculator Metodic", "🍱 Planificator 5 Mese", "🛒 Listă Cumpărături"])
+tab1, tab2, tab3 = st.tabs(["📊 Calculator Metodic", "🍱 Planificator cu Gramaje", "🛒 Listă Cumpărături"])
 
 # --- TAB 1: CALCULATOR ---
+if 'tinta_kcal' not in st.session_state:
+    st.session_state.tinta_kcal = 1500 # Valoare default
+
 with tab1:
     st.subheader("📊 Calcul Necesar Caloric (GA x IC)")
     col1, col2 = st.columns(2)
@@ -51,6 +54,8 @@ with tab1:
         necesar_max = ga * valori_ic[1]
         tinta_min = max(rmb_val, necesar_min - deficit)
         tinta_max = max(rmb_val, necesar_max - deficit)
+        
+        st.session_state.tinta_kcal = (tinta_min + tinta_max) / 2
         st.session_state.rezultate = {"rmb": rmb_val, "n_min": necesar_min, "n_max": necesar_max, "t_min": tinta_min, "t_max": tinta_max}
         st.session_state.calculat = True
 
@@ -58,48 +63,68 @@ with tab1:
         res = st.session_state.rezultate
         st.markdown("---")
         c1, c2, c3 = st.columns(3)
-        c1.metric("📉 RMB (Limita inferioară)", f"{res['rmb']:.0f} kcal")
-        c2.metric("⚖️ Menținere (Interval)", f"{res['n_min']:.0f} - {res['n_max']:.0f} kcal")
-        c3.warning(f"🎯 Țintă Slăbire: {res['t_min']:.0f} - {res['t_max']:.0f} kcal")
+        c1.metric("📉 RMB", f"{res['rmb']:.0f} kcal")
+        c2.metric("⚖️ Menținere", f"{res['n_min']:.0f}-{res['n_max']:.0f} kcal")
+        c3.warning(f"🎯 Țintă Medie: {st.session_state.tinta_kcal:.0f} kcal")
 
-# --- TAB 2: PLANIFICATOR ---
+# --- TAB 2: PLANIFICATOR CU GRAMAJE ---
 with tab2:
-    st.subheader("🍱 Meniu Săptămânal (3 Mese + 2 Gustări)")
+    st.subheader(f"🍱 Meniu Săptămânal adaptat la {st.session_state.tinta_kcal:.0f} kcal")
+    
+    # Proporții calorice pe mese
+    distributie = {"MD": 0.25, "G1": 0.10, "PZ": 0.35, "G2": 0.10, "CN": 0.20}
+    
     zile = ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"]
     
-    optiuni_md = ["Omletă cu legume", "Iaurt cu ovăz", "Pâine integrală cu avocado", "Ouă ochiuri și brânză"]
-    optiuni_g = ["Măr", "Nuci crude", "Iaurt", "Migdale", "Brânză cottage", "Baton proteic"]
-    optiuni_p = ["Pui la grătar cu salată", "Pește la cuptor", "Curcan cu legume", "Salată cu ton și porumb"]
-    optiuni_c = ["Supă cremă de legume", "Salată verde cu ou", "Pește alb și sparanghel", "Iaurt cu semințe de chia"]
+    # Bază de date simplificată (kcal/100g)
+    db = {
+        "Omletă": 150, "Ovăz": 350, "Pâine avocado": 220, "Iaurt grecesc": 100,
+        "Măr": 52, "Nuci": 650, "Baton proteic": 380, "Brânză cottage": 98,
+        "Pui grătar": 165, "Pește cuptor": 120, "Curcan": 140, "Salată ton": 110,
+        "Supă cremă": 50, "Pește alb": 90, "Iaurt semințe": 130
+    }
+
+    def calc_gr(masa, kcal_tinta):
+        kcal_masa = st.session_state.tinta_kcal * distributie[masa]
+        return kcal_masa
 
     tabel_date = []
     for zi in zile:
         with st.expander(f"📅 Configurează {zi}"):
             col1, col2, col3, col4, col5 = st.columns(5)
-            with col1: md = st.selectbox("Mic Dejun", optiuni_md, key=f"md_{zi}")
-            with col2: g1 = st.selectbox("Gustare 1", optiuni_g, key=f"g1_{zi}")
-            with col3: pz = st.selectbox("Prânz", optiuni_p, key=f"pz_{zi}")
-            with col4: g2 = st.selectbox("Gustare 2", optiuni_g, key=f"g2_{zi}")
-            with col5: cn = st.selectbox("Cină", optiuni_c, key=f"cn_{zi}")
-            tabel_date.append({"Ziua": zi, "Mic Dejun": md, "Gustare 1": g1, "Prânz": pz, "Gustare 2": g2, "Cină": cn})
+            with col1: 
+                md = st.selectbox("Mic Dejun", list(opt for opt in db.keys() if opt in ["Omletă", "Ovăz", "Pâine avocado"]), key=f"md_{zi}")
+                gr_md = (calc_gr("MD", st.session_state.tinta_kcal) / db[md]) * 100
+            with col2: 
+                g1 = st.selectbox("Gustare 1", ["Măr", "Nuci", "Iaurt grecesc"], key=f"g1_{zi}")
+                gr_g1 = (calc_gr("G1", st.session_state.tinta_kcal) / db[g1]) * 100
+            with col3: 
+                pz = st.selectbox("Prânz", ["Pui grătar", "Pește cuptor", "Curcan", "Salată ton"], key=f"pz_{zi}")
+                gr_pz = (calc_gr("PZ", st.session_state.tinta_kcal) / db[pz]) * 100
+            with col4: 
+                g2 = st.selectbox("Gustare 2", ["Baton proteic", "Brânză cottage", "Nuci"], key=f"g2_{zi}")
+                gr_g2 = (calc_gr("G2", st.session_state.tinta_kcal) / db[g2]) * 100
+            with col5: 
+                cn = st.selectbox("Cină", ["Supă cremă", "Pește alb", "Iaurt semințe"], key=f"cn_{zi}")
+                gr_cn = (calc_gr("CN", st.session_state.tinta_kcal) / db[cn]) * 100
+            
+            tabel_date.append({
+                "Ziua": zi, 
+                "Mic Dejun": f"{md} ({gr_md:.0f}g)", 
+                "Gustare 1": f"{g1} ({gr_g1:.0f}g)", 
+                "Prânz": f"{pz} ({gr_pz:.0f}g)", 
+                "Gustare 2": f"{g2} ({gr_g2:.0f}g)", 
+                "Cină": f"{cn} ({gr_cn:.0f}g)"
+            })
 
     st.markdown("---")
-    st.subheader("📋 Planul tău curent")
     df_plan = pd.DataFrame(tabel_date)
     st.table(df_plan)
 
-    # BUTON EXPORT EXCEL (CSV)
     csv = df_plan.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📥 Descarcă Meniul în Excel (CSV)",
-        data=csv,
-        file_name="meniu_saptamanal_mariei.csv",
-        mime="text/csv",
-    )
+    st.download_button(label="📥 Descarcă Planul cu Gramaje", data=csv, file_name="meniu_gramaje.csv", mime="text/csv")
 
 # --- TAB 3: LISTA ---
 with tab3:
     st.subheader("🛒 Lista de Cumpărături")
-    st.write("- **Proteine:** Ouă, Pui, Curcan, Pește, Ton, Iaurt grecesc, Brânză cottage")
-    st.write("- **Fibre & Carbohidrați:** Legume proaspete, Ovăz, Pâine integrală, Chia")
-    st.write("- **Grăsimi sănătoase:** Avocado, Nuci crude, Migdale, Semințe")
+    st.write("Cumpără alimentele selectate și cântărește-le conform indicațiilor din tabel.")
