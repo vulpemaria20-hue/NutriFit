@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.express as px
 
 # 1. Configurare Pagina
-st.set_page_config(page_title="NutriFit Pro", layout="wide")
+st.set_page_config(page_title="NutriFit ", layout="wide")
 
 # 2. Sistem de Parolă în Sidebar
 st.sidebar.title("🔐 Autentificare")
@@ -59,5 +59,6 @@ if parola == "nutrifit2026":
 else:
     st.warning("Te rugăm să introduci parola corectă în meniul din stânga pentru a debloca instrumentele.")
     st.info("Sfat: Parola este 'nutrifit2026'")
+
 
 
