@@ -1,4 +1,24 @@
 import streamlit as st
+
+def verifica_parola():
+    if "autentificat" not in st.session_state:
+        st.session_state["autentificat"] = False
+
+    if not st.session_state["autentificat"]:
+        parola_introdusa = st.text_input("Introdu parola pentru acces:", type="password")
+        if st.button("Logare"):
+            if parola_introdusa == "ParolaTaSecreta123":
+                st.session_state["autentificat"] = True
+                st.rerun()
+            else:
+                st.error("Parolă incorectă!")
+        return False
+    return True
+
+if verifica_parola():
+    # AICI pui tot codul aplicației tale NutriFit
+    st.title("Bine ai venit la NutriFit!")
+import streamlit as st
 import pandas as pd
 import plotly.express as px
 
@@ -91,3 +111,4 @@ with tab2:
         st.info("Sistemul de rotație a alimentelor va fi disponibil în curând.")
     else:
         st.warning("⚠️ Calculează planul mai întâi!")
+
