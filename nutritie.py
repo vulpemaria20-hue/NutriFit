@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -161,5 +162,4 @@ if verificare_parola():
     # ... [Copiaza restul codului din nutritie.py aici sub Tab-uri] ...
     
     # NOTĂ: Asigură-te că indentezi (dai un Tab la dreapta) tot restul codului 
-
     # pentru a fi în interiorul blocului "if verificare_parola():"
