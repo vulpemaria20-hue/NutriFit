@@ -1,8 +1,3 @@
-Ai dreptate, în ultima versiune de cod ne-am concentrat atât de mult pe formulele de calcul, încât am omis funcția de export. Pentru a putea descărca tabelul cu meniul tău în format Excel (sau CSV, care se deschide direct în Excel), trebuie să adăugăm un buton special sub tabelul de planificare.
-
-Iată codul actualizat pentru nutritie.py care include acum și butonul de Download:
-
-Python
 import streamlit as st
 import pandas as pd
 
@@ -100,3 +95,11 @@ with tab2:
         data=csv,
         file_name="meniu_saptamanal_mariei.csv",
         mime="text/csv",
+    )
+
+# --- TAB 3: LISTA ---
+with tab3:
+    st.subheader("🛒 Lista de Cumpărături")
+    st.write("- **Proteine:** Ouă, Pui, Curcan, Pește, Ton, Iaurt grecesc, Brânză cottage")
+    st.write("- **Fibre & Carbohidrați:** Legume proaspete, Ovăz, Pâine integrală, Chia")
+    st.write("- **Grăsimi sănătoase:** Avocado, Nuci crude, Migdale, Semințe")
