@@ -13,7 +13,7 @@ st.sidebar.title("🔐 Autentificare")
 parola = st.sidebar.text_input("Introdu parola proiectului:", type="password")
 
 if parola == "nutrifit2026":
-    st.title("🍎 NutriFit Pro - Dashboard Nutrițional")
+    st.title("🍎 NutriFit  - Dashboard Nutrițional")
     st.markdown("---")
 
     # 3. Introducere Date Client
@@ -59,4 +59,5 @@ if parola == "nutrifit2026":
 else:
     st.warning("Te rugăm să introduci parola corectă în meniul din stânga pentru a debloca instrumentele.")
     st.info("Sfat: Parola este 'nutrifit2026'")
+
 
