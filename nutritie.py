@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 
 # 1. CONFIGURARE PAGINĂ
 st.set_page_config(page_title="Aplicația Mariei", layout="wide", page_icon="🍎")
@@ -20,51 +19,61 @@ if not st.session_state.autentificat:
             st.error("Parolă incorectă!")
     st.stop()
 
-# 3. INTERFAȚĂ (Am scos titlurile cu Nutrifit)
+# 3. INTERFAȚĂ
 st.title("🍎 Aplicația Mariei")
 
-if 'calculat' not in st.session_state:
-    st.session_state.calculat = False
+tab1, tab2, tab3 = st.tabs(["📊 Calculator", "🍱 Planificator Săptămânal", "🛒 Listă Cumpărături"])
 
-tab1, tab2, tab3 = st.tabs(["📊 Calculator & Macros", "🍱 Meniu pe 7 Zile", "🛒 Lista de Cumpărături"])
-
+# --- TAB 1: CALCULATOR ---
 with tab1:
-    col_in, col_out = st.columns([1, 2], gap="large")
-    with col_in:
-        st.subheader("📝 Date Profil")
-        greutate = st.number_input("Greutate (kg)", 40.0, 200.0, 75.0)
-        sex = st.radio("Sex", ["Masculin", "Feminin"], horizontal=True)
-        
-        activitate_optiuni = {"Sedentar": 1.2, "Activitate Ușoară": 1.375, "Moderat": 1.55, "Activ": 1.725}
-        nivel = st.selectbox("Nivel de Activitate:", list(activitate_optiuni.keys()))
-        
-        if st.button("CALCULEAZĂ PLANUL"):
-            rmb = (10 * greutate) + (6.25 * 165) - (5 * 30) + (5 if sex == "Masculin" else -161)
-            necesar = int(rmb * activitate_optiuni[nivel])
-            st.session_state.necesar = necesar
-            st.session_state.deficit = necesar - 500
-            st.session_state.calculat = True
+    st.subheader("📝 Calculează necesarul tău")
+    greutate = st.number_input("Greutate (kg)", 40.0, 200.0, 70.0)
+    if st.button("Calculează"):
+        necesar = int(10 * greutate + 500) # Formulă simplă de exemplu
+        st.success(f"Ținta ta este de {necesar} kcal.")
 
-    with col_out:
-        if st.session_state.calculat:
-            st.subheader("🎯 Rezultate")
-            st.metric("Necesar Menținere", f"{st.session_state.necesar} kcal")
-            st.metric("Țintă Slăbire", f"{st.session_state.deficit} kcal")
-
-# --- TAB 2: AICI PUNEM MENIUL TĂU ---
+# --- TAB 2: PLANIFICATOR CU SELECTIE ---
 with tab2:
-    st.subheader("🍱 Meniu Personalizat")
-    
-    # Exemplu de tabel pentru meniu (îl poți edita)
-    date_meniu = {
-        "Ziua": ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"],
-        "Mic Dejun": ["Omletă", "Iaurt cu ovăz", "Pancakes proteice", "Omletă", "Smoothie", "Ouă ochiuri", "Iaurt"],
-        "Prânz": ["Pui cu orez", "Pește cu legume", "Vită", "Pui cu orez", "Salată cu ton", "Curcan", "Gratar"],
-        "Cină": ["Salată", "Supă cremă", "Brânză cu roșii", "Salată verde", "Iaurt", "Pește", "Salată"]
-    }
-    df_meniu = pd.DataFrame(date_meniu)
-    st.table(df_meniu) # Afișează meniul sub formă de tabel curat
+    st.subheader("🍱 Configurează-ți meniul pe 7 zile")
+    st.info("Selectează ce dorești să mănânci în fiecare zi. Gustările sunt incluse între mese.")
 
+    zile = ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"]
+    
+    # Opțiuni pentru mâncare (Poți adăuga/modifica aceste liste)
+    optiuni_mic_dejun = ["Omletă cu legume", "Iaurt cu ovăz și fructe", "Pancakes proteice", "Pâine integrală cu avocado"]
+    optiuni_gustari = ["O mână de nuci", "Un măr", "Iaurt grecesc", "Baton proteic", "O banană", "Brânză cottage"]
+    optiuni_pranz = ["Pui la grătar cu orez", "Pește la cuptor cu sparanghel", "Salată mare cu ton", "Vită cu broccoli"]
+    optiuni_cina = ["Supă cremă de linte", "Salată verde cu ou fierte", "Iaurt cu semințe", "Curcan cu salată rucola"]
+
+    # Creăm un dicționar pentru a stoca alegerile
+    alegeri = []
+
+    for zi in zile:
+        with st.expander(f"📅 Meniu pentru {zi}"):
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                md = st.selectbox(f"Mic Dejun ({zi})", optiuni_mic_dejun)
+            with col2:
+                g1 = st.selectbox(f"Gustare 1 ({zi})", optiuni_gustari)
+            with col3:
+                pz = st.selectbox(f"Prânz ({zi})", optiuni_pranz)
+            with col4:
+                g2 = st.selectbox(f"Gustare 2 ({zi})", optiuni_gustari, index=1)
+            with col5:
+                cn = st.selectbox(f"Cină ({zi})", optiuni_cina)
+            
+            alegeri.append({"Zi": zi, "Mic Dejun": md, "Gustare 1": g1, "Prânz": pz, "Gustare 2": g2, "Cină": cn})
+
+    # Afișăm tabelul final recapitulativ
+    st.markdown("---")
+    st.subheader("📋 Tabelul tău săptămânal")
+    df_final = pd.DataFrame(alegeri)
+    st.table(df_final)
+
+# --- TAB 3: LISTA ---
 with tab3:
     st.subheader("🛒 Lista de Cumpărături")
-    st.write("- Piept de pui\n- Ouă\n- Legume verzi\n- Iaurt grecesc")
+    st.write("În funcție de selecțiile din Tab-ul 2, asigură-te că ai:")
+    st.write("- Ouă, Pui, Pește, Curcan")
+    st.write("- Iaurt, Ovăz, Nuci, Fructe")
+    st.write("- Legume verzi, Orez, Avocado")
