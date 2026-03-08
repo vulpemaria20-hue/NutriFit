@@ -1,3 +1,6 @@
+import os
+os.system("pip install plotly")
+import plotly.express as px
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -56,3 +59,4 @@ if parola == "nutrifit2026":
 else:
     st.warning("Te rugăm să introduci parola corectă în meniul din stânga pentru a debloca instrumentele.")
     st.info("Sfat: Parola este 'nutrifit2026'")
+
